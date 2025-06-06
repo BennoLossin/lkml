@@ -44,6 +44,7 @@ mod assort;
 mod config;
 mod git;
 mod lei;
+mod util;
 
 #[derive(Parser, Debug)]
 struct Args {
