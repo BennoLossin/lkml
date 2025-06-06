@@ -220,7 +220,7 @@ fn index<'a>(
                     let m_content = m.parsed.get_body()?;
                     let content = mail.parsed.get_body()?;
                     if content.len() < m_content.len() {
-                        Ok(content == m_content[..content.len()])
+                        Ok(m_content.as_bytes().starts_with(content.as_bytes()))
                     } else {
                         if content[..m_content.len()] == m_content {
                             error!(
