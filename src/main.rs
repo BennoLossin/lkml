@@ -37,13 +37,14 @@ use tracing_subscriber::{
 
 use crate::{
     config::Config,
-    lei::Interval,
+    fetch::Interval,
 };
 
 mod assort;
 mod config;
+#[path = "fetch/fetch.rs"]
+mod fetch;
 mod git;
-mod lei;
 mod util;
 
 #[derive(Parser, Debug)]
@@ -77,7 +78,7 @@ fn run(interval: Interval, store: &Path, config: &Config) -> Result<ExitCode> {
             git::pull(store)?;
         }
     }
-    let new = lei::query(interval, &config.query)?;
+    let new = fetch::fetch(interval, &config.query, config.fetch_method)?;
     assort::run(new, Maildir::from(store.to_owned()), config)?;
     let mut did_commit = false;
     if config.git.is_some() && !git::is_clean(store)? {

@@ -22,7 +22,7 @@ pub struct Config {
     /// Path to the main maildir directory.
     pub path: PathBuf,
 
-    /// `lei q` query to run.
+    /// Query to give to lore to filter downloaded emails.
     ///
     /// # Examples
     ///
@@ -30,6 +30,10 @@ pub struct Config {
     /// query = "dfn:^rust/ OR l:rust-for-linux.vger.kernel.org"
     /// ```
     pub query: String,
+
+    /// Method used to download the emails.
+    #[serde(default)]
+    pub fetch_method: FetchMethod,
 
     /// Quirk fixes for mail clients, mailing lists etc.
     #[serde(default)]
@@ -57,6 +61,14 @@ pub struct Config {
     pub git: Option<Git>,
 
     pub ignore: Option<Ignore>,
+}
+
+#[derive(Deserialize, Debug, Default, Clone, Copy)]
+#[serde(deny_unknown_fields)]
+pub enum FetchMethod {
+    /// Use `lei q` to fetch the emails from lore.
+    #[default]
+    Lei,
 }
 
 #[derive(Deserialize, Debug)]
