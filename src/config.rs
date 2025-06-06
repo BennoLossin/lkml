@@ -65,10 +65,16 @@ pub struct Config {
 
 #[derive(Deserialize, Debug, Default, Clone, Copy)]
 #[serde(deny_unknown_fields)]
+#[serde(rename_all = "lowercase")]
 pub enum FetchMethod {
     /// Use `lei q` to fetch the emails from lore.
     #[default]
     Lei,
+
+    /// Download and expand the `mbox` from lore directly.
+    ///
+    /// WARNING: this may be less reliable than [`Self::Lei`].
+    Https,
 }
 
 #[derive(Deserialize, Debug)]

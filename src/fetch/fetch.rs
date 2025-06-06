@@ -7,6 +7,7 @@ use tracing::debug;
 
 use crate::config::FetchMethod;
 
+mod https;
 mod lei;
 
 const DEFAULT_INBOX: &str = "https://lore.kernel.org/all/";
@@ -23,6 +24,8 @@ pub enum Error {
     Code(i32),
     #[error("`lei` execution unexpectedly terminated by signal.")]
     Signal,
+    #[error("failed to produce mdir from public-inbox: {0}")]
+    Https(#[from] https::Error),
 }
 
 #[derive(ValueEnum, Clone, Copy, Debug)]
@@ -55,10 +58,12 @@ pub fn fetch(
     let cfg = Fetch {
         query: &query,
         inbox: DEFAULT_INBOX,
+        full_thread: true,
     };
 
     match fetch_method {
         FetchMethod::Lei => lei::fetch(&cfg, tmpdir.path()),
+        FetchMethod::Https => https::fetch(&cfg, tmpdir.path()),
     }
     .map(|()| tmpdir)
 }
@@ -70,4 +75,8 @@ pub struct Fetch<'a> {
 
     /// The lore server address.
     pub inbox: &'a str,
+
+    /// Whether to retrieve the entire thread if one message from it matches the
+    /// quer.
+    pub full_thread: bool,
 }
