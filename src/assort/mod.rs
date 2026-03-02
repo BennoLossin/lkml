@@ -148,7 +148,15 @@ fn index<'a>(
     let mut error = false;
     let mut actions = HashMap::with_capacity(new_count);
     for (mail, typ) in mails {
-        let mail = Rc::new(mail::parse(mail, *typ, cfg)?);
+        let mail = match mail::parse(mail, *typ, cfg) {
+            Ok(mail) => mail,
+            Err(err) => {
+                error!("could not parse mail: {err}");
+                error = true;
+                continue;
+            }
+        };
+        let mail = Rc::new(mail);
         let mails = indexed.entry(mail.id.clone()).or_default();
         if !mails.is_empty() && mail.typ == Type::New {
             if mail
