@@ -51,18 +51,18 @@ pub fn parse<'a>(mail: &'a mut MailEntry, typ: Type, cfg: &Config) -> Result<Mai
     let path = mail.path().to_owned();
     let maildir_id = mail.id().to_owned();
     let parsed = mail.parsed()?;
-    let id = parsed.headers.get_all_headers("Message-ID");
-    let id = match id.len() {
-        0 => return Err(Error::MissingID(path)),
-        1 => id[0].get_value(),
-        len => {
-            if let Some(id) = id
+    let ids = parsed.headers.get_all_headers("Message-ID");
+    let id = match &*ids {
+        [] => return Err(Error::MissingID(path)),
+        [id] => id.get_value(),
+        many_ids => {
+            if let Some(id) = many_ids
                 .iter()
                 .find(|id| cfg.quirks.prefer.contains(&id.get_value()))
             {
                 id.get_value()
             } else {
-                return Err(Error::MultipleIDs(len, path));
+                return Err(Error::MultipleIDs(many_ids.len(), path));
             }
         }
     };
