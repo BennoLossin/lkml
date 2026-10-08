@@ -1,4 +1,7 @@
-use std::{io, process::Command};
+use std::{
+    io,
+    process::Command,
+};
 
 use clap::ValueEnum;
 use tempdir::TempDir;

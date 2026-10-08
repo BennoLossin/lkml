@@ -18,7 +18,10 @@
 use std::{
     io,
     path::Path,
-    process::{Command, ExitCode},
+    process::{
+        Command,
+        ExitCode,
+    },
 };
 
 use anyhow::Result;
@@ -26,9 +29,16 @@ use clap::Parser;
 use maildir::Maildir;
 use thiserror::Error;
 use tracing::debug;
-use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    filter::EnvFilter,
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 
-use crate::{config::Config, lei::Interval};
+use crate::{
+    config::Config,
+    lei::Interval,
+};
 
 mod assort;
 mod config;

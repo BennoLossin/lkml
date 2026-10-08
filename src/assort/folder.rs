@@ -1,11 +1,17 @@
-use std::{collections::HashSet, path::Path};
+use std::{
+    collections::HashSet,
+    path::Path,
+};
 
 use maildir::Maildir;
 use thiserror::Error;
 
 use crate::{
     assort::mail::Type,
-    config::{self, Keyword},
+    config::{
+        self,
+        Keyword,
+    },
 };
 
 pub struct Folder {

@@ -1,7 +1,16 @@
-use std::{hash::Hash, path::PathBuf};
+use std::{
+    hash::Hash,
+    path::PathBuf,
+};
 
-use maildir::{MailEntry, MailEntryError};
-use mailparse::{MailHeaderMap, ParsedMail};
+use maildir::{
+    MailEntry,
+    MailEntryError,
+};
+use mailparse::{
+    MailHeaderMap,
+    ParsedMail,
+};
 use thiserror::Error;
 
 use crate::config::Config;
@@ -47,7 +56,11 @@ pub enum Error {
     MailEntry(#[from] MailEntryError),
 }
 
-pub fn parse<'a>(mail: &'a mut MailEntry, typ: Type, cfg: &Config) -> Result<Mail<'a>, Error> {
+pub fn parse<'a>(
+    mail: &'a mut MailEntry,
+    typ: Type,
+    cfg: &Config,
+) -> Result<Mail<'a>, Error> {
     let path = mail.path().to_owned();
     let maildir_id = mail.id().to_owned();
     let parsed = mail.parsed()?;

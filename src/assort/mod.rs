@@ -1,20 +1,42 @@
 use std::{
-    collections::{HashMap, HashSet},
+    collections::{
+        HashMap,
+        HashSet,
+    },
     io,
     rc::Rc,
 };
 
 use folder::DropReason;
-use maildir::{MailEntry, MailEntryError, Maildir};
-use mailparse::{MailHeaderMap, MailParseError};
+use maildir::{
+    MailEntry,
+    MailEntryError,
+    Maildir,
+};
+use mailparse::{
+    MailHeaderMap,
+    MailParseError,
+};
 use tempdir::TempDir;
 use thiserror::Error;
-use tracing::{error, info, trace, warn};
+use tracing::{
+    error,
+    info,
+    trace,
+    warn,
+};
 
 use crate::{
     assort::{
-        folder::{Action, Dest, Folder},
-        mail::{Mail, Type},
+        folder::{
+            Action,
+            Dest,
+            Folder,
+        },
+        mail::{
+            Mail,
+            Type,
+        },
     },
     config::Config,
 };
@@ -46,11 +68,8 @@ pub fn run(new_dir: TempDir, main: Maildir, cfg: &Config) -> Result<(), Error> {
         new_count,
         rest,
     } = collect_mails(new, main, cfg)?;
-    let Indexed {
-        indexed,
-        new,
-        mut actions,
-    } = index(new_count, &mut mails, cfg)?;
+    let Indexed { indexed, new, mut actions } =
+        index(new_count, &mut mails, cfg)?;
     let mut new_threads = HashSet::new();
     for new in &new {
         assort(
@@ -78,7 +97,11 @@ struct Collected {
     rest: usize,
 }
 
-fn collect_mails(new: Maildir, main: Maildir, cfg: &Config) -> Result<Collected, Error> {
+fn collect_mails(
+    new: Maildir,
+    main: Maildir,
+    cfg: &Config,
+) -> Result<Collected, Error> {
     let mut folders = cfg
         .folders
         .iter()
@@ -105,7 +128,9 @@ fn collect_mails(new: Maildir, main: Maildir, cfg: &Config) -> Result<Collected,
                 .chain(f.maildir.list_cur())
                 .map(move |m| (m, i))
         })
-        .map(|(m, i)| Ok::<_, Error>((m.map_err(Error::MailIO)?, Type::Folder(i))))
+        .map(|(m, i)| {
+            Ok::<_, Error>((m.map_err(Error::MailIO)?, Type::Folder(i)))
+        })
         .collect::<Result<Vec<_>, _>>()?;
     let mut dupe = Vec::with_capacity(100);
     let mut new_count = 0;
@@ -143,7 +168,8 @@ fn index<'a>(
     mails: &'a mut [(MailEntry, Type)],
     cfg: &Config,
 ) -> Result<Indexed<'a>, Error> {
-    let mut indexed: HashMap<String, Vec<Rc<Mail<'a>>>> = HashMap::with_capacity(mails.len());
+    let mut indexed: HashMap<String, Vec<Rc<Mail<'a>>>> =
+        HashMap::with_capacity(mails.len());
     let mut new = Vec::with_capacity(new_count);
     let mut error = false;
     let mut actions = HashMap::with_capacity(new_count);
@@ -234,20 +260,20 @@ fn index<'a>(
         mails.push(mail);
     }
     if error {
-        eprintln!("An error occurred with duplicate emails above. If you report the error,");
+        eprintln!(
+            "An error occurred with duplicate emails above. If you report the error,"
+        );
         eprintln!("please include the offending email files.");
         eprintln!();
-        eprintln!("Press enter to terminate the program & delete the temporary directory.");
+        eprintln!(
+            "Press enter to terminate the program & delete the temporary directory."
+        );
         io::stdin()
             .read_line(&mut String::new())
             .expect("failed to read from stdin");
         return Err(Error::Internal);
     }
-    Ok(Indexed {
-        indexed,
-        new,
-        actions,
-    })
+    Ok(Indexed { indexed, new, actions })
 }
 
 fn assort<'a>(
@@ -274,9 +300,19 @@ fn assort<'a>(
                         new_threads.insert(new.clone());
                     }
                     let parent_action =
-                        actions.get(parent).copied().map(Ok).unwrap_or_else(|| {
-                            assort(parent, indexed, actions, folders, cfg, rest, new_threads)
-                        })?;
+                        actions.get(parent).copied().map(Ok).unwrap_or_else(
+                            || {
+                                assort(
+                                    parent,
+                                    indexed,
+                                    actions,
+                                    folders,
+                                    cfg,
+                                    rest,
+                                    new_threads,
+                                )
+                            },
+                        )?;
                     action = Some(parent_action.with_cleared_flags());
                 }
                 Type::Folder(id) => {
@@ -395,11 +431,13 @@ fn fixup_thread_siblings<'a>(
                             let ours = actions[new].dest();
                             let theirs = actions[parent].dest();
                             if ours != theirs {
-                                if let Some(dest) = Dest::max_prio(ours, theirs) {
+                                if let Some(dest) = Dest::max_prio(ours, theirs)
+                                {
                                     let ours = actions.get_mut(new).unwrap();
                                     ours.set_dest(dest);
                                     compute_flags(new, ours, folders, cfg)?;
-                                    let theirs = actions.get_mut(parent).unwrap();
+                                    let theirs =
+                                        actions.get_mut(parent).unwrap();
                                     theirs.set_dest(dest);
                                     compute_flags(new, theirs, folders, cfg)?;
                                     changed = true;
@@ -407,7 +445,9 @@ fn fixup_thread_siblings<'a>(
                             }
                         } else {
                             let action = actions[new];
-                            if let Some(typ) = Option::<Type>::from(action.dest()) {
+                            if let Some(typ) =
+                                Option::<Type>::from(action.dest())
+                            {
                                 if typ != parent.typ {
                                     error = true;
                                     error!(
@@ -426,10 +466,16 @@ fn fixup_thread_siblings<'a>(
         }
     }
     if error {
-        eprintln!("An error occurred with wanting to move emails into separate folders above.");
-        eprintln!("If you report the error, please include the offending email files.");
+        eprintln!(
+            "An error occurred with wanting to move emails into separate folders above."
+        );
+        eprintln!(
+            "If you report the error, please include the offending email files."
+        );
         eprintln!();
-        eprintln!("Press enter to terminate the program & delete the temporary directory.");
+        eprintln!(
+            "Press enter to terminate the program & delete the temporary directory."
+        );
         io::stdin()
             .read_line(&mut String::new())
             .expect("failed to read from stdin");
@@ -438,7 +484,10 @@ fn fixup_thread_siblings<'a>(
     Ok(())
 }
 
-fn perform<'a>(actions: HashMap<Rc<Mail<'a>>, Action>, folders: &[Folder]) -> Result<(), Error> {
+fn perform<'a>(
+    actions: HashMap<Rc<Mail<'a>>, Action>,
+    folders: &[Folder],
+) -> Result<(), Error> {
     for (mail, action) in actions {
         let id = &mail.maildir_id;
         let flags = action.flags();

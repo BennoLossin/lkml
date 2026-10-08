@@ -1,4 +1,8 @@
-use std::{io, path::Path, process::Command};
+use std::{
+    io,
+    path::Path,
+    process::Command,
+};
 
 use thiserror::Error;
 
@@ -14,7 +18,10 @@ pub enum Error {
 
 type Result<T = ()> = core::result::Result<T, Error>;
 
-fn git<'a>(cmd: impl IntoIterator<Item = &'a str>, dir: impl AsRef<Path>) -> Result {
+fn git<'a>(
+    cmd: impl IntoIterator<Item = &'a str>,
+    dir: impl AsRef<Path>,
+) -> Result {
     let res = Command::new("git").args(cmd).current_dir(dir).status()?;
     if res.success() {
         Ok(())

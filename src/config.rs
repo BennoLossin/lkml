@@ -1,7 +1,13 @@
 // `Regex` contains interior mutability, but we don't depend on that for hashing/equality
 #![expect(clippy::mutable_key_type)]
 
-use std::{collections::HashSet, fs, hash::Hash, io, path::PathBuf};
+use std::{
+    collections::HashSet,
+    fs,
+    hash::Hash,
+    io,
+    path::PathBuf,
+};
 
 use directories_next::BaseDirs;
 use regex::Regex;
@@ -210,6 +216,7 @@ pub fn load() -> Result<Config, Error> {
         .config_dir()
         .join("lkml")
         .join("config.toml");
-    let cfg = fs::read_to_string(&path).map_err(|e| Error::Read(e, path.clone()))?;
+    let cfg =
+        fs::read_to_string(&path).map_err(|e| Error::Read(e, path.clone()))?;
     toml::from_str(&cfg).map_err(|e| Error::Parse(e, path.clone()))
 }
