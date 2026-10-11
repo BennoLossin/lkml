@@ -59,3 +59,13 @@ pub fn create_dir_if_not_exists(path: impl AsRef<Path>) -> io::Result<()> {
         Err(e) => Err(e),
     }
 }
+
+pub fn metric_prefix(num: u64) -> (f64, &'static str) {
+    match num.checked_ilog10().unwrap_or(0) {
+        0..3 => (num as f64, ""),
+        3..6 => (((num / 100) as f64) / 10.0, "K"),
+        6..9 => (((num / 100_000) as f64) / 10.0, "M"),
+        9..12 => (((num / 100_000_000) as f64) / 10.0, "G"),
+        12.. => (((num / 100_000_000_000) as f64) / 10.0, "T"),
+    }
+}

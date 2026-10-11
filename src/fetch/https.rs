@@ -26,6 +26,7 @@ use super::Fetch;
 use crate::util::{
     self,
     ReadCounter,
+    metric_prefix,
 };
 
 #[derive(Debug, Error)]
@@ -148,9 +149,16 @@ fn mbox2mdir<R: BufRead>(
         if new_total_read / MSG_INTERVAL > total_read / MSG_INTERVAL {
             let downloaded = get_downloaded(&r);
             let extracted = get_extracted(&r);
+            let (downloaded, download_unit) = metric_prefix(downloaded);
+            let (extracted, extracted_unit) = metric_prefix(extracted);
+            let (new_total_read, total_unit) = metric_prefix(new_total_read);
+            let (messages, messages_unit) = metric_prefix(messages);
             print!(
-                "\r{downloaded} B downloaded, {extracted} B extracted, {new_total_read} B read, \
-                {messages} messages "
+                "\r{downloaded} {download_unit}B downloaded, \
+                {extracted} {extracted_unit}B extracted, \
+                {new_total_read} {total_unit}B read, \
+                {messages} {messages_unit} messages  \
+                                                    "
             );
         }
 
@@ -191,12 +199,23 @@ fn mbox2mdir<R: BufRead>(
 
     let downloaded = get_downloaded(&r);
     let extracted = get_extracted(&r);
+
+    let (downloaded, download_unit) = metric_prefix(downloaded);
+    let (extracted, extracted_unit) = metric_prefix(extracted);
+    let (total_read, total_unit) = metric_prefix(total_read);
     println!(
-        "\rComplete: {downloaded} B downloaded, {extracted} B extracted, {total_read} B read"
+        "\rComplete: {downloaded} {download_unit}B downloaded, \
+        {extracted} {extracted_unit}B extracted, \
+        {total_read} {total_unit}B read"
     );
+    let (msg_count, msg_count_unit) = metric_prefix(messages - duplicates);
+    let (messages, messages_unit) = metric_prefix(messages);
+    let (duplicates, duplicates_unit) = metric_prefix(duplicates);
     println!(
-        "{} messages retrieved ({messages} matches, {duplicates} duplicates)",
-        messages - duplicates,
+        "{} {msg_count_unit} messages retrieved \
+        ({messages} {messages_unit} matches, \
+        {duplicates} {duplicates_unit} duplicates)",
+        msg_count,
     );
     Ok(())
 }
