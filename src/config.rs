@@ -1,7 +1,14 @@
-// `Regex` contains interior mutability, but we don't depend on that for hashing/equality
+// `Regex` contains interior mutability, but we don't depend on that for
+// hashing/equality
 #![expect(clippy::mutable_key_type)]
 
-use std::{collections::HashSet, fs, hash::Hash, io, path::PathBuf};
+use std::{
+    collections::HashSet,
+    fs,
+    hash::Hash,
+    io,
+    path::PathBuf,
+};
 
 use directories_next::BaseDirs;
 use regex::Regex;
@@ -15,7 +22,7 @@ pub struct Config {
     /// Path to the main maildir directory.
     pub path: PathBuf,
 
-    /// `lei q` query to run.
+    /// Query to give to lore to filter downloaded emails.
     ///
     /// # Examples
     ///
@@ -24,13 +31,18 @@ pub struct Config {
     /// ```
     pub query: String,
 
+    /// Method used to download the emails.
+    #[serde(default)]
+    pub fetch_method: FetchMethod,
+
     /// Quirk fixes for mail clients, mailing lists etc.
     #[serde(default)]
     pub quirks: Quirks,
 
     /// Your own name + mail addresses.
     ///
-    /// All mails from these addresses will be marked as read, since you sent them yourself.
+    /// All mails from these addresses will be marked as read, since you sent
+    /// them yourself.
     pub addresses: HashSet<String>,
 
     /// Control which emails have the `Flagged` flag set.
@@ -51,16 +63,31 @@ pub struct Config {
     pub ignore: Option<Ignore>,
 }
 
+#[derive(Deserialize, Debug, Default, Clone, Copy)]
+#[serde(deny_unknown_fields)]
+#[serde(rename_all = "lowercase")]
+pub enum FetchMethod {
+    /// Use `lei q` to fetch the emails from lore.
+    #[default]
+    Lei,
+
+    /// Download and expand the `mbox` from lore directly.
+    ///
+    /// WARNING: this may be less reliable than [`Self::Lei`].
+    Https,
+}
+
 #[derive(Deserialize, Debug)]
 #[serde(deny_unknown_fields)]
 pub struct Folder {
     /// Name of the folder.
     ///
-    /// This means that there should be a folder starting with a dot with this name (`.$name`)
-    /// under the root maildir.
+    /// This means that there should be a folder starting with a dot with this
+    /// name (`.$name`) under the root maildir.
     pub name: String,
 
-    /// Set of strings to scan the body for. If it matches, the email is moved to this folder.
+    /// Set of strings to scan the body for. If it matches, the email is moved
+    /// to this folder.
     ///
     /// # Examples
     ///
@@ -72,7 +99,8 @@ pub struct Folder {
 
     /// Priority of this folder compared to other folders.
     ///
-    /// Higher priority folders will be preferred if their `match-body` value matches.
+    /// Higher priority folders will be preferred if their `match-body` value
+    /// matches.
     pub priority: usize,
 
     /// Mark all emails delivered to this folder as read.
@@ -83,7 +111,8 @@ pub struct Folder {
 
     /// Set of keywords used to mark mails with the `Flagged` flag.
     ///
-    /// If this is set, it overrides the global [`flagging.keywords`](Flagging::keywords) configuration option.
+    /// If this is set, it overrides the global
+    /// [`flagging.keywords`](Flagging::keywords) configuration option.
     #[serde(rename = "flagging-keywords")]
     pub flagging_keywords: Option<HashSet<Keyword>>,
 }
@@ -93,10 +122,12 @@ pub struct Folder {
 pub struct Quirks {
     /// Set of `List-Id`'s used for special deduplication logic.
     ///
-    /// Some mailing lists append a footer or prepend the subject line. This results in `lei q` not
-    /// detecting that they are the same message via the `content` dedupe strategy (since the
-    /// content isn't the same). For this reason, we employ additional dedupliaction logic that
-    /// removes any duplicate emails that have a `List-Id` header with a value from this set.
+    /// Some mailing lists append a footer or prepend the subject line. This
+    /// results in `lei q` not detecting that they are the same message via the
+    /// `content` dedupe strategy (since the content isn't the same). For this
+    /// reason, we employ additional dedupliaction logic that removes any
+    /// duplicate emails that have a `List-Id` header with a value from this
+    /// set.
     ///
     /// # Examples
     ///
@@ -107,9 +138,10 @@ pub struct Quirks {
 
     /// Set of preferred `Message-ID`s.
     ///
-    /// Some mail clients opt to send emails with multiple `Message-ID`s. In the case when the
-    /// first `Message-ID`s is not unique, but a subsequent one is, you can specify the unique one
-    /// in this list and we will prefer that `Message-ID` over the first one.
+    /// Some mail clients opt to send emails with multiple `Message-ID`s. In the
+    /// case when the first `Message-ID`s is not unique, but a subsequent one
+    /// is, you can specify the unique one in this list and we will prefer that
+    /// `Message-ID` over the first one.
     pub prefer: HashSet<String>,
 }
 
@@ -147,9 +179,10 @@ pub struct Ignore {
 
     /// Set of `List-Id`'s to ignore emails from that aren't direct mentions.
     //
-    /// Depending on the query, `lei q` might pick up messages from lists that aren't of interest
-    /// to you. In this case, you can list them here and you won't receive emails from this list,
-    /// except when they trigger your keywords or are sent directly to you.
+    /// Depending on the query, `lei q` might pick up messages from lists that
+    /// aren't of interest to you. In this case, you can list them here and you
+    /// won't receive emails from this list, except when they trigger your
+    /// keywords or are sent directly to you.
     ///
     /// # Examples
     ///
@@ -210,6 +243,7 @@ pub fn load() -> Result<Config, Error> {
         .config_dir()
         .join("lkml")
         .join("config.toml");
-    let cfg = fs::read_to_string(&path).map_err(|e| Error::Read(e, path.clone()))?;
+    let cfg =
+        fs::read_to_string(&path).map_err(|e| Error::Read(e, path.clone()))?;
     toml::from_str(&cfg).map_err(|e| Error::Parse(e, path.clone()))
 }

@@ -27,6 +27,7 @@ jobs:
           ref: ${{github.event.pull_request.head.sha}}
       - uses: dtolnay/rust-toolchain@nightly
       - run: cargo install cargo-rdme
+      - run: cargo rdme install-rust-toolchain-for-intralinks
       - run: git config user.name "github-runner" && git config user.email "<>"
       - run: git rebase --exec 'cargo rdme --check' --root
   docs:

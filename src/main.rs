@@ -1,24 +1,27 @@
 //! # `lkml`
 //!
-//! A command line tool to download mailing list emails via `lei` and then assort them into
-//! maildirs based on custom criteria.
+//! A command line tool to download mailing list emails via `lei` and then
+//! assort them into maildirs based on custom criteria.
 //!
 //! <div class="warning">
 //!
-//! **WARNING**: this program is still pretty experimental and might break your emails, use with
-//! care!
+//! **WARNING**: this program is still pretty experimental and might break your
+//! emails, use with care!
 //!
 //! </div>
 //!
 //! ## Configuration
 //!
-//! See [`Config`] for the various configuration options. The location of the config file is
-//! `~/.config/lkml/config.toml` on linux.
+//! See [`Config`] for the various configuration options. The location of the
+//! config file is `~/.config/lkml/config.toml` on linux.
 
 use std::{
     io,
     path::Path,
-    process::{Command, ExitCode},
+    process::{
+        Command,
+        ExitCode,
+    },
 };
 
 use anyhow::Result;
@@ -26,14 +29,23 @@ use clap::Parser;
 use maildir::Maildir;
 use thiserror::Error;
 use tracing::debug;
-use tracing_subscriber::{filter::EnvFilter, layer::SubscriberExt, util::SubscriberInitExt};
+use tracing_subscriber::{
+    filter::EnvFilter,
+    layer::SubscriberExt,
+    util::SubscriberInitExt,
+};
 
-use crate::{config::Config, lei::Interval};
+use crate::{
+    config::Config,
+    fetch::Interval,
+};
 
 mod assort;
 mod config;
+#[path = "fetch/fetch.rs"]
+mod fetch;
 mod git;
-mod lei;
+mod util;
 
 #[derive(Parser, Debug)]
 struct Args {
@@ -66,7 +78,7 @@ fn run(interval: Interval, store: &Path, config: &Config) -> Result<ExitCode> {
             git::pull(store)?;
         }
     }
-    let new = lei::query(interval, &config.query)?;
+    let new = fetch::fetch(interval, &config.query, config.fetch_method)?;
     assort::run(new, Maildir::from(store.to_owned()), config)?;
     let mut did_commit = false;
     if config.git.is_some() && !git::is_clean(store)? {
