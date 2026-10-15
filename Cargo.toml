@@ -1,16 +1,16 @@
 [package]
 name = "lkml"
-version = "0.1.2"
+version = "0.2.0"
 edition = "2024"
 rust-version = "1.85.1"
 
-authors = ["y86-dev"]
+authors = ["Benno Lossin <me@benno-lossin.de>"]
 license = "MIT OR Apache-2.0"
-description = "Program to download and assort emails from mailing lists supported by `lei`"
+description = "Program to download and assort emails from linux kernel mailing lists"
 readme = "README.md"
 
 documentation = "https://docs.rs/lkml"
-repository = "https://github.com/y86-dev/lkml"
+repository = "https://github.com/BennoLossin/lkml"
 keywords = ["mailing-list", "mail", "email"]
 categories = ["command-line-utilities", "email"]
 
