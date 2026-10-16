@@ -343,20 +343,31 @@ fn assort<'a>(
     } else {
         new_threads.insert(new.clone());
     }
-    let body = new.parsed.get_body()?;
     if action.is_none() || is_new_thread {
-        let folders = if let Some(action) = action {
-            folders
-                .iter()
-                .enumerate()
-                .take(action.folder_idx().unwrap_or(0))
-        } else {
-            folders.iter().enumerate().take(folders.len())
-        };
-        for (i, folder) in folders {
-            if folder.keywords.iter().any(|kw| kw.matches(&body)) {
-                action = Some(Action::folder(i));
-                break;
+        'outer: for part in new.parsed.parts() {
+            let body = match part.get_body() {
+                Ok(body) => body,
+                Err(err) => {
+                    warn!(
+                        "in message `{}`: body of part type {:?} not unicode: {err}",
+                        new.id, part.ctype,
+                    );
+                    continue;
+                }
+            };
+            let folders = if let Some(action) = action {
+                folders
+                    .iter()
+                    .enumerate()
+                    .take(action.folder_idx().unwrap_or(0))
+            } else {
+                folders.iter().enumerate().take(folders.len())
+            };
+            for (i, folder) in folders {
+                if folder.keywords.iter().any(|kw| kw.matches(&body)) {
+                    action = Some(Action::folder(i));
+                    break 'outer;
+                }
             }
         }
     }
@@ -410,16 +421,32 @@ fn compute_flags<'a>(
     match action.dest() {
         Dest::Drop(_) => {}
         Dest::Folder(i) => {
-            let body = mail.parsed.get_body()?;
             if folders[i].mark_read {
                 action.read();
             }
-            if let Some(fkws) = &folders[i].flagging_keywords {
-                if fkws.iter().any(|kw| kw.matches(&body)) {
+            for part in mail.parsed.parts() {
+                let body = match part.get_body() {
+                    Ok(body) => body,
+                    Err(err) => {
+                        warn!(
+                            "in message `{}`: body of part type {:?} not unicode: {err}",
+                            mail.id, part.ctype,
+                        );
+                        continue;
+                    }
+                };
+                if let Some(fkws) = &folders[i].flagging_keywords {
+                    if fkws.iter().any(|kw| kw.matches(&body)) {
+                        action.flag();
+                    }
+                } else if cfg
+                    .flagging
+                    .keywords
+                    .iter()
+                    .any(|kw| kw.matches(&body))
+                {
                     action.flag();
                 }
-            } else if cfg.flagging.keywords.iter().any(|kw| kw.matches(&body)) {
-                action.flag();
             }
         }
     }
