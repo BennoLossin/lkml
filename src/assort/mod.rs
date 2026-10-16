@@ -471,34 +471,31 @@ fn fixup_thread_siblings<'a>(
                         if parent.typ == Type::New {
                             let ours = actions[new].dest();
                             let theirs = actions[parent].dest();
-                            if ours != theirs {
-                                if let Some(dest) = Dest::max_prio(ours, theirs)
-                                {
-                                    let ours = actions.get_mut(new).unwrap();
-                                    ours.set_dest(dest);
-                                    compute_flags(new, ours, folders, cfg)?;
-                                    let theirs =
-                                        actions.get_mut(parent).unwrap();
-                                    theirs.set_dest(dest);
-                                    compute_flags(new, theirs, folders, cfg)?;
-                                    changed = true;
-                                }
+                            if ours != theirs
+                                && let Some(dest) = Dest::max_prio(ours, theirs)
+                            {
+                                let ours = actions.get_mut(new).unwrap();
+                                ours.set_dest(dest);
+                                compute_flags(new, ours, folders, cfg)?;
+                                let theirs = actions.get_mut(parent).unwrap();
+                                theirs.set_dest(dest);
+                                compute_flags(new, theirs, folders, cfg)?;
+                                changed = true;
                             }
                         } else {
                             let action = actions[new];
                             if let Some(typ) =
                                 Option::<Type>::from(action.dest())
+                                && typ != parent.typ
                             {
-                                if typ != parent.typ {
-                                    error = true;
-                                    error!(
-                                        "moved into wrong folder with parent!\n\t{} ({:?})\n\t{} -> {:?}",
-                                        parent.path.display(),
-                                        parent.typ,
-                                        new.path.display(),
-                                        action
-                                    )
-                                }
+                                error = true;
+                                error!(
+                                    "moved into wrong folder with parent!\n\t{} ({:?})\n\t{} -> {:?}",
+                                    parent.path.display(),
+                                    parent.typ,
+                                    new.path.display(),
+                                    action
+                                )
                             }
                         }
                     }
