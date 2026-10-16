@@ -355,14 +355,12 @@ fn assort<'a>(
                     continue;
                 }
             };
-            let folders = if let Some(action) = action {
-                folders
-                    .iter()
-                    .enumerate()
-                    .take(action.folder_idx().unwrap_or(0))
-            } else {
-                folders.iter().enumerate().take(folders.len())
-            };
+            let folders = folders.iter().enumerate().take(
+                action
+                    .as_ref()
+                    .map(|a| a.folder_idx().map(|idx| idx + 1).unwrap_or(0))
+                    .unwrap_or(usize::MAX),
+            );
             for (i, folder) in folders {
                 if folder.keywords.iter().any(|kw| kw.matches(&body)) {
                     action = Some(Action::folder(i));
