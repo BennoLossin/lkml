@@ -309,10 +309,6 @@ fn assort<'a>(
             let parent = &parents[0];
             match &parent.typ {
                 Type::New => {
-                    if new_threads.contains(parent) {
-                        is_new_thread = true;
-                        new_threads.insert(new.clone());
-                    }
                     let parent_action =
                         actions.get(parent).copied().map(Ok).unwrap_or_else(
                             || {
@@ -327,6 +323,10 @@ fn assort<'a>(
                                 )
                             },
                         )?;
+                    if new_threads.contains(parent) {
+                        is_new_thread = true;
+                        new_threads.insert(new.clone());
+                    }
                     action = Some(parent_action.with_cleared_flags());
                 }
                 Type::Folder(id) => {
@@ -341,6 +341,7 @@ fn assort<'a>(
             new_threads.insert(new.clone());
         }
     } else {
+        is_new_thread = true;
         new_threads.insert(new.clone());
     }
     if action.is_none() || is_new_thread {
